@@ -1,26 +1,71 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
-import { WeatherData } from "./types/WeatherType";
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  ImageBackground,
+  Keyboard
+} from "react-native";
+import { useWeather } from "../contexts/WeatherContext";
+import { TextField } from "react-native-ui-lib";
+import SearchSVG from "../assets/SVGs/Search";
+import WeatherUnit from "../components/WeatherDetails";
+import WeatherForecastCard from "../components/ForecastCard";
+import WeatherDetailsContainer from "../components/WeatherDetailsContainer";
+import SearchBar from "../components/SearchBar";
 
 export const WeatherScreen = () => {
-  const [currentCity, setCurrentCity] = useState("");
-  const [weather, setWeather] = useState<WeatherData>();
-  const [forecasts, setForecasts] = useState<DailyForecast[]>();
-  const [units, setUnits] = useState<string>("metric");
-  const [userLocation, setUserLocation] = useState({
-    lat: "42.6977028",
-    lon: "23.319941"
-  });
+  const {
+    currentCity,
+    setCurrentCity,
+    searchValue,
+    setSearchValue,
+    weather,
+    setWeather,
+    forecasts,
+    setForecasts,
+    units,
+    setUnits,
+    RPH,
+    RPW
+  } = useWeather();
+
+  const weatherURL = `/weather?q=${searchValue}&appid=${process.env.API_KEY}&units=${units}`;
+  const forecastURL = `/forecast?q=${searchValue}&appid=${process.env.API_KEY}&units=${units}`;
 
   const api = axios.create({
     baseURL: process.env.API_BASE_URL,
     timeout: 5000
   });
 
+  useEffect(() => {
+    fetchData(weatherURL, "weather");
+    fetchData(forecastURL, "forecast");
+
+    return () => {
+      setWeather(undefined);
+      setForecasts(undefined);
+    };
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+  };
+
+  const handleSearchClick = () => {
+    fetchData(weatherURL, "weather");
+    fetchData(forecastURL, "forecast");
+    setSearchValue("");
+    Keyboard.dismiss();
+  };
+
   //The api returns a forecast for every 3 hours fo the next 5 day(total of 40)
   // However i only want one forcast for each day instead of 8 and that's why i need this filer func
-  function filterDailyForecasts(forecastList: DailyForecast[]) {
+  const filterDailyForecasts = (forecastList: DailyForecast[]) => {
     const dailyForecasts: DailyForecast[] = [];
 
     forecastList.forEach((forecast) => {
@@ -30,6 +75,9 @@ export const WeatherScreen = () => {
         const existingForecast = dailyForecasts.find(
           (item) => item.dt_txt.split(" ")[0] === date
         );
+        {
+          units;
+        }
         if (!existingForecast) {
           dailyForecasts.push(forecast);
         }
@@ -37,16 +85,12 @@ export const WeatherScreen = () => {
     });
 
     return dailyForecasts;
-  }
-
-  const weatherURL = `/weather?lat=${userLocation.lat}4&lon=${userLocation.lon}&appid=${process.env.API_KEY}&units=${units}`;
-  const forecastURL = `/forecast?lat=${userLocation.lat}4&lon=${userLocation.lon}&appid=${process.env.API_KEY}&units=${units}`;
+  };
 
   const fetchData = async (
     url: string,
     endpointType: "weather" | "forecast"
   ) => {
-    console.log(url, "URL");
     try {
       const res = await api.get(url);
       if (endpointType === "weather") {
@@ -61,68 +105,96 @@ export const WeatherScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData(weatherURL, "weather");
+  const getDayOfTheWeek = (date: string) => {
+    const weekday = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ];
+    const d = new Date(date);
+    let day = weekday[d.getDay()];
 
-    return () => {
-      setWeather(undefined);
-    };
-  }, [weatherURL]);
-
-  useEffect(() => {
-    fetchData(forecastURL, "forecast");
-
-    return () => {
-      setForecasts(undefined);
-    };
-  }, [forecastURL]);
+    return day;
+  };
 
   return (
     <>
-      <ScrollView style={{ marginTop: 50, alignContent: "center" }}>
-        {forecasts?.map((forecast) => {
-          return (
-            <View style={{ marginVertical: 5 }}>
-              <Text style={styles.header}>{currentCity}</Text>
-              <Text>
-                {forecast.main.temp_min} - {forecast.main.temp_max}
+      <View>
+        <ImageBackground
+          source={require("../assets/background.jpg")}
+          imageStyle={{ resizeMode: "cover", flex: 1 }}
+          style={{ height: RPH(100) }}
+        >
+          <SearchBar
+            value={searchValue}
+            placeholder="Search by city..."
+            onChangeText={handleSearchChange}
+            maxLength={50}
+            handleSearchClick={handleSearchClick}
+          />
+          {weather?.main && (
+            <View
+              style={{
+                alignItems: "center"
+              }}
+            >
+              <Text style={{ fontSize: 30, color: "white" }}>
+                {weather?.name}/{weather?.sys.country}
               </Text>
-              <Text style={styles.header}>
-                {forecast.dt_txt + "          "}
-                {forecast.main.temp} temp for the day
-              </Text>
-              <Image
-                source={{
-                  uri: `https://openweathermap.org/img/wn/${forecast?.weather[0].icon}@2x.png`
+              <View
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center"
                 }}
-                height={100}
-                width={100}
-              />
+              >
+                <Image
+                  source={{
+                    uri: `https://openweathermap.org/img/wn/${weather?.weather[0].icon}.png`
+                  }}
+                  height={RPH(15)}
+                  width={RPW(25)}
+                />
+                <Text
+                  style={{ fontSize: 80, fontWeight: "bold", color: "white" }}
+                >
+                  {weather?.main.temp.toFixed(0)}&deg;C
+                </Text>
+              </View>
+              <Text style={{ fontSize: 20, color: "white" }}>
+                {weather?.weather[0].description}
+              </Text>
             </View>
-          );
-        })}
-      </ScrollView>
+          )}
+          {weather && <WeatherDetailsContainer weather={weather} />}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={true}
+            style={{
+              marginTop: RPH(5),
+              alignContent: "center",
+              paddingHorizontal: RPW(5),
+              maxHeight: "25%"
+            }}
+          >
+            {forecasts?.map((forecast, index) => {
+              let dayofTheWeek = getDayOfTheWeek(forecast.dt_txt);
+              return (
+                <WeatherForecastCard
+                  key={index}
+                  forecast={forecast}
+                  dayofTheWeek={dayofTheWeek}
+                />
+              );
+            })}
+          </ScrollView>
+        </ImageBackground>
+      </View>
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20
-  },
-  forecastContainer: {
-    maxHeight: "70%",
-    maxWidth: "80%",
-    fontSize: 24
-    // alignItems: "center"
-    // justifyContent: "center"
-  }
-});
