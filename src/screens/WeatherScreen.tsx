@@ -1,22 +1,23 @@
-import axios from "axios";
-import React, { useEffect, useRef } from "react";
+import axios, { AxiosError } from "axios";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Image,
   ScrollView,
-  TouchableOpacity,
   ImageBackground,
-  Keyboard
+  Keyboard,
+  Switch
 } from "react-native";
 import { useWeather } from "../contexts/WeatherContext";
-import { TextField } from "react-native-ui-lib";
-import SearchSVG from "../assets/SVGs/Search";
-import WeatherUnit from "../components/WeatherDetails";
 import WeatherForecastCard from "../components/ForecastCard";
 import WeatherDetailsContainer from "../components/WeatherDetailsContainer";
 import SearchBar from "../components/SearchBar";
+import { getDayOfTheWeek } from "../utils";
+import { Colors, LoaderScreen } from "react-native-ui-lib";
+import _ from "lodash";
+import ErrorMessageContainer from "../components/ErrorContainer";
+import ToggleDegrees from "../components/ToggleDegrees";
 
 export const WeatherScreen = () => {
   const {
@@ -28,19 +29,31 @@ export const WeatherScreen = () => {
     setWeather,
     forecasts,
     setForecasts,
-    units,
-    setUnits,
     RPH,
-    RPW
+    RPW,
+    isCelsius
   } = useWeather();
 
-  const weatherURL = `/weather?q=${searchValue}&appid=${process.env.API_KEY}&units=${units}`;
-  const forecastURL = `/forecast?q=${searchValue}&appid=${process.env.API_KEY}&units=${units}`;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const weatherURL = `/weather?q=${searchValue}&appid=${
+    process.env.API_KEY
+  }&units=${isCelsius ? "metric" : "imperial"}`;
+  const forecastURL = `/forecast?q=${searchValue}&appid=${
+    process.env.API_KEY
+  }&units=${isCelsius ? "metric" : "imperial"}`;
 
   const api = axios.create({
     baseURL: process.env.API_BASE_URL,
     timeout: 5000
   });
+
+  const debouncedSearch = _.debounce(() => {
+    fetchData(weatherURL, "weather");
+    fetchData(forecastURL, "forecast");
+  }, 800);
 
   useEffect(() => {
     fetchData(weatherURL, "weather");
@@ -50,16 +63,18 @@ export const WeatherScreen = () => {
       setWeather(undefined);
       setForecasts(undefined);
     };
-  }, []);
+  }, [isCelsius]);
 
   const handleSearchChange = (value: string) => {
     setSearchValue(value);
+    setError(false);
   };
 
   const handleSearchClick = () => {
-    fetchData(weatherURL, "weather");
-    fetchData(forecastURL, "forecast");
-    setSearchValue("");
+    if (searchValue !== "") {
+      setIsLoading(true);
+      debouncedSearch();
+    }
     Keyboard.dismiss();
   };
 
@@ -75,9 +90,6 @@ export const WeatherScreen = () => {
         const existingForecast = dailyForecasts.find(
           (item) => item.dt_txt.split(" ")[0] === date
         );
-        {
-          units;
-        }
         if (!existingForecast) {
           dailyForecasts.push(forecast);
         }
@@ -100,25 +112,16 @@ export const WeatherScreen = () => {
         setCurrentCity(res.data?.city?.name);
         setForecasts(filteredForecasts);
       }
-    } catch (err) {
+      setError(false);
+    } catch (err: any) {
       console.log(err);
+      setError(true);
+      setErrorMessage(
+        "Can't find the city you are looking for. Please, try again!"
+      );
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const getDayOfTheWeek = (date: string) => {
-    const weekday = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday"
-    ];
-    const d = new Date(date);
-    let day = weekday[d.getDay()];
-
-    return day;
   };
 
   return (
@@ -129,70 +132,96 @@ export const WeatherScreen = () => {
           imageStyle={{ resizeMode: "cover", flex: 1 }}
           style={{ height: RPH(100) }}
         >
-          <SearchBar
-            value={searchValue}
-            placeholder="Search by city..."
-            onChangeText={handleSearchChange}
-            maxLength={50}
-            handleSearchClick={handleSearchClick}
-          />
-          {weather?.main && (
-            <View
-              style={{
-                alignItems: "center"
+          <View style={{ display: "flex", flexDirection: "row" }}>
+            <SearchBar
+              value={searchValue}
+              placeholder="Search by city..."
+              onChangeText={handleSearchChange}
+              maxLength={15}
+              handleSearchClick={handleSearchClick}
+            />
+            <ToggleDegrees isCelsius={isCelsius} />
+          </View>
+          {isLoading ? (
+            <LoaderScreen
+              message={"Loading..."}
+              color={"white"}
+              messageStyle={{
+                color: "white",
+                fontSize: 20,
+                fontWeight: "bold"
               }}
-            >
-              <Text style={{ fontSize: 30, color: "white" }}>
-                {weather?.name}/{weather?.sys.country}
-              </Text>
+            />
+          ) : error ? (
+            <ErrorMessageContainer message={errorMessage} />
+          ) : (
+            <>
               <View
                 style={{
-                  display: "flex",
-                  flexDirection: "row",
                   alignItems: "center"
                 }}
               >
-                <Image
-                  source={{
-                    uri: `https://openweathermap.org/img/wn/${weather?.weather[0].icon}.png`
-                  }}
-                  height={RPH(15)}
-                  width={RPW(25)}
-                />
-                <Text
-                  style={{ fontSize: 80, fontWeight: "bold", color: "white" }}
-                >
-                  {weather?.main.temp.toFixed(0)}&deg;C
-                </Text>
+                {weather?.main && (
+                  <>
+                    <Text style={{ fontSize: 30, color: "white" }}>
+                      {weather?.name}/{weather?.sys.country}
+                    </Text>
+                    <View
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center"
+                      }}
+                    >
+                      <Image
+                        source={{
+                          uri: `https://openweathermap.org/img/wn/${weather?.weather[0].icon}.png`
+                        }}
+                        height={RPH(15)}
+                        width={RPW(25)}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 80,
+                          fontWeight: "bold",
+                          color: "white"
+                        }}
+                      >
+                        {weather?.main.temp.toFixed(0)}&deg;
+                        {isCelsius ? "C" : "F"}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 20, color: "white" }}>
+                      {weather?.weather[0].description}
+                    </Text>
+                  </>
+                )}
               </View>
-              <Text style={{ fontSize: 20, color: "white" }}>
-                {weather?.weather[0].description}
-              </Text>
-            </View>
+              {weather && <WeatherDetailsContainer weather={weather} />}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                scrollEnabled={true}
+                style={{
+                  marginTop: RPH(5),
+                  alignContent: "center",
+                  paddingHorizontal: RPW(5),
+                  maxHeight: "25%"
+                }}
+              >
+                {forecasts?.map((forecast, index) => {
+                  let dayofTheWeek = getDayOfTheWeek(forecast.dt_txt);
+                  return (
+                    <WeatherForecastCard
+                      key={index}
+                      forecast={forecast}
+                      dayofTheWeek={dayofTheWeek}
+                    />
+                  );
+                })}
+              </ScrollView>
+            </>
           )}
-          {weather && <WeatherDetailsContainer weather={weather} />}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={true}
-            style={{
-              marginTop: RPH(5),
-              alignContent: "center",
-              paddingHorizontal: RPW(5),
-              maxHeight: "25%"
-            }}
-          >
-            {forecasts?.map((forecast, index) => {
-              let dayofTheWeek = getDayOfTheWeek(forecast.dt_txt);
-              return (
-                <WeatherForecastCard
-                  key={index}
-                  forecast={forecast}
-                  dayofTheWeek={dayofTheWeek}
-                />
-              );
-            })}
-          </ScrollView>
         </ImageBackground>
       </View>
     </>

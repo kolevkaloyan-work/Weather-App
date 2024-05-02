@@ -9,7 +9,7 @@ interface WeatherDetailsContainerProps {
 }
 
 const WeatherDetailsContainer = ({ weather }: WeatherDetailsContainerProps) => {
-  const { RPH, RPW } = useWeather();
+  const { RPH, RPW, isCelsius } = useWeather();
   return (
     <View
       style={{
@@ -29,9 +29,24 @@ const WeatherDetailsContainer = ({ weather }: WeatherDetailsContainerProps) => {
           justifyContent: "space-evenly"
         }}
       >
-        <WeatherUnit title="Feel" value={weather.main.feels_like.toString()} />
-        <WeatherUnit title="Low" value={weather.main.temp_min.toString()} />
-        <WeatherUnit title="High" value={weather.main.temp_max.toString()} />
+        <WeatherUnit
+          title="Feel"
+          value={`${weather.main.feels_like.toFixed(1).toString()} \u00B0${
+            isCelsius ? "C" : "F"
+          }`}
+        />
+        <WeatherUnit
+          title="Low"
+          value={`${weather.main.temp_min.toFixed(1).toString()} \u00B0${
+            isCelsius ? "C" : "F"
+          }`}
+        />
+        <WeatherUnit
+          title="High"
+          value={`${weather.main.temp_max.toFixed(1).toString()} \u00B0${
+            isCelsius ? "C" : "F"
+          }`}
+        />
       </View>
       <View
         style={{

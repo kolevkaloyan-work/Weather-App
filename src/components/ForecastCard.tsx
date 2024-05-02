@@ -11,7 +11,7 @@ const WeatherForecastCard = ({
   forecast,
   dayofTheWeek
 }: WeatherForecastCard) => {
-  const { RPH, RPW } = useWeather();
+  const { RPH, RPW, isCelsius } = useWeather();
 
   return (
     <View
@@ -46,7 +46,7 @@ const WeatherForecastCard = ({
           color: "white"
         }}
       >
-        {forecast.main.temp.toFixed(0)} &deg;C
+        {forecast.main.temp.toFixed(0)} &deg;{isCelsius ? "C" : "F"}
       </Text>
     </View>
   );

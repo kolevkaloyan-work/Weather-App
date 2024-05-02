@@ -1,20 +1,28 @@
-import React, { createContext, useContext, useState } from "react";
+import React, {
+  RefObject,
+  createContext,
+  useContext,
+  useRef,
+  useState
+} from "react";
 import { WeatherData } from "../types/WeatherType";
 import { Dimensions } from "react-native";
+import { TextFieldRef } from "react-native-ui-lib";
 
 interface WeatherContextType {
   currentCity: string;
   searchValue: string;
   weather: WeatherData | undefined;
   forecasts: DailyForecast[] | undefined;
-  units: string;
+  isCelsius: boolean;
   setCurrentCity: (city: string) => void;
   setSearchValue: (searchValue: string) => void;
   setWeather: (weather: WeatherData | undefined) => void;
   setForecasts: (forecasts: DailyForecast[] | undefined) => void;
-  setUnits: (unit: string) => void;
+  setIsCelsius: (unit: any) => void;
   RPH: (percentage: number) => number;
   RPW: (percentage: number) => number;
+  inputRef: RefObject<any>;
 }
 
 const WeatherContext = createContext<WeatherContextType>({
@@ -22,14 +30,15 @@ const WeatherContext = createContext<WeatherContextType>({
   searchValue: "Sofia",
   weather: undefined,
   forecasts: undefined,
-  units: "metric",
+  isCelsius: true,
   setCurrentCity: () => {},
   setSearchValue: () => {},
   setWeather: () => {},
   setForecasts: () => {},
-  setUnits: () => {},
+  setIsCelsius: () => {},
   RPH: () => 0,
-  RPW: () => 0
+  RPW: () => 0,
+  inputRef: useRef(null)
 });
 
 export const WeatherProvider = ({ children }: any) => {
@@ -37,7 +46,8 @@ export const WeatherProvider = ({ children }: any) => {
   const [searchValue, setSearchValue] = useState<string>("Sofia");
   const [weather, setWeather] = useState<WeatherData | undefined>();
   const [forecasts, setForecasts] = useState<DailyForecast[] | undefined>();
-  const [units, setUnits] = useState<string>("metric");
+  const [isCelsius, setIsCelsius] = useState<boolean>(true);
+  const inputRef = useRef<TextFieldRef>(null);
 
   const screenHeight = Dimensions.get("window").height;
   const screenWidth = Dimensions.get("window").width;
@@ -59,14 +69,15 @@ export const WeatherProvider = ({ children }: any) => {
         searchValue,
         weather,
         forecasts,
-        units,
         setCurrentCity,
         setSearchValue,
         setWeather,
         setForecasts,
-        setUnits,
+        isCelsius,
+        setIsCelsius,
         RPH,
-        RPW
+        RPW,
+        inputRef
       }}
     >
       {children}
