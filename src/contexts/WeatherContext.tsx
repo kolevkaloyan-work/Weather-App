@@ -1,13 +1,6 @@
-import React, {
-  RefObject,
-  createContext,
-  useContext,
-  useRef,
-  useState
-} from "react";
+import React, { RefObject, createContext, useContext, useState } from "react";
 import { WeatherData } from "../types/WeatherType";
 import { Dimensions } from "react-native";
-import { TextFieldRef } from "react-native-ui-lib";
 
 interface WeatherContextType {
   currentCity: string;
@@ -22,7 +15,6 @@ interface WeatherContextType {
   setIsCelsius: (unit: any) => void;
   RPH: (percentage: number) => number;
   RPW: (percentage: number) => number;
-  inputRef: RefObject<any>;
 }
 
 const WeatherContext = createContext<WeatherContextType>({
@@ -37,8 +29,7 @@ const WeatherContext = createContext<WeatherContextType>({
   setForecasts: () => {},
   setIsCelsius: () => {},
   RPH: () => 0,
-  RPW: () => 0,
-  inputRef: useRef(null)
+  RPW: () => 0
 });
 
 export const WeatherProvider = ({ children }: any) => {
@@ -47,7 +38,6 @@ export const WeatherProvider = ({ children }: any) => {
   const [weather, setWeather] = useState<WeatherData | undefined>();
   const [forecasts, setForecasts] = useState<DailyForecast[] | undefined>();
   const [isCelsius, setIsCelsius] = useState<boolean>(true);
-  const inputRef = useRef<TextFieldRef>(null);
 
   const screenHeight = Dimensions.get("window").height;
   const screenWidth = Dimensions.get("window").width;
@@ -76,8 +66,7 @@ export const WeatherProvider = ({ children }: any) => {
         isCelsius,
         setIsCelsius,
         RPH,
-        RPW,
-        inputRef
+        RPW
       }}
     >
       {children}
