@@ -26,5 +26,6 @@
 - In your terminal type ```npx expo start --clear```
 - Press i to open an IOS Simulator
 - Press a to open an Android Simulator
+- When using ExpoGo app make sure that your PC and phone are connected to the same network
 - Open your camera and scan the barcode from the terminal(IOS)
 - Open the ExpoGo app first and then click on the scan barcode(Android)
