@@ -5,7 +5,6 @@ import SearchSVG from "../assets/SVGs/Search"; // Assuming you have the SearchSV
 import { useWeather } from "../contexts/WeatherContext";
 
 interface SearchBarProps {
-  value: string;
   placeholder: string;
   onChangeText: (value: string) => void;
   maxLength?: number;
@@ -13,7 +12,6 @@ interface SearchBarProps {
 }
 
 const SearchBar = ({
-  value,
   placeholder,
   onChangeText,
   maxLength,
@@ -24,7 +22,6 @@ const SearchBar = ({
   return (
     <View>
       <TextField
-        value={value}
         placeholder={placeholder}
         floatingPlaceholder
         onChangeText={onChangeText}

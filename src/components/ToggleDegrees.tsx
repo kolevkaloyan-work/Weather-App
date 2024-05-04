@@ -7,11 +7,9 @@ interface TemperatureUnitSwitchProps {
 }
 
 const ToggleDegrees = ({ isCelsius }: TemperatureUnitSwitchProps) => {
-  const { RPH, RPW, setIsCelsius, searchValue } = useWeather();
+  const { RPH, RPW, setIsCelsius } = useWeather();
   const toggleSwitch = () => {
-    if (searchValue && searchValue !== "") {
-      setIsCelsius((prev: any) => !prev);
-    }
+    setIsCelsius((prev: any) => !prev);
   };
 
   return (

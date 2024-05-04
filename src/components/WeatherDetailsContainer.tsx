@@ -57,7 +57,9 @@ const WeatherDetailsContainer = ({ weather }: WeatherDetailsContainerProps) => {
       >
         <WeatherUnit
           title="Wind"
-          value={weather.wind.speed.toString() + " M/S"}
+          value={
+            weather.wind.speed.toString() + `${isCelsius ? " M/S" : " KT"}`
+          }
           icon="wind"
         />
         <WeatherUnit
