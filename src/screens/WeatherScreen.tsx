@@ -1,22 +1,14 @@
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  ImageBackground,
-  Keyboard
-} from "react-native";
+import { View, Text, Image, ImageBackground, Keyboard } from "react-native";
 import { useWeather } from "../contexts/WeatherContext";
-import WeatherForecastCard from "../components/ForecastCard";
 import WeatherDetailsContainer from "../components/WeatherDetailsContainer";
 import SearchBar from "../components/SearchBar";
-import { filterDailyForecasts, getDayOfTheWeek } from "../utils";
 import { LoaderScreen } from "react-native-ui-lib";
 import _ from "lodash";
 import ErrorMessageContainer from "../components/ErrorContainer";
 import ToggleDegrees from "../components/ToggleDegrees";
 import { useWeatherQuery } from "../api/useWeatherQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import ForecastScrollView from "../components/ForecastScrollView";
 
 export const WeatherScreen = () => {
   const { searchValue, setSearchValue, RPH, RPW, isCelsius } = useWeather();
@@ -58,7 +50,6 @@ export const WeatherScreen = () => {
       >
         <View style={{ display: "flex", flexDirection: "row" }}>
           <SearchBar
-            // value={searchValue}
             placeholder="Search by city..."
             onChangeText={handleSearchChange}
             maxLength={15}
@@ -77,7 +68,11 @@ export const WeatherScreen = () => {
             }}
           />
         ) : weatherError ? (
-          <ErrorMessageContainer />
+          <ErrorMessageContainer
+            errorMsg={
+              "Couldn't find the city you are looking for! Please write the correct name and try again."
+            }
+          />
         ) : (
           <>
             <View
@@ -123,33 +118,7 @@ export const WeatherScreen = () => {
             </View>
             {weatherData && <WeatherDetailsContainer weather={weatherData} />}
             {!isLoadingForecast && weatherData && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                scrollEnabled={true}
-                style={{
-                  marginTop: RPH(5),
-                  alignContent: "center",
-                  paddingHorizontal: RPW(5),
-                  maxHeight: "25%"
-                }}
-              >
-                {filterDailyForecasts(forecastData.list)?.map(
-                  (
-                    forecast: DailyForecast,
-                    index: React.Key | null | undefined
-                  ) => {
-                    let dayofTheWeek = getDayOfTheWeek(forecast.dt_txt);
-                    return (
-                      <WeatherForecastCard
-                        key={index}
-                        forecast={forecast}
-                        dayofTheWeek={dayofTheWeek}
-                      />
-                    );
-                  }
-                )}
-              </ScrollView>
+              <ForecastScrollView forecastData={forecastData?.list} />
             )}
           </>
         )}

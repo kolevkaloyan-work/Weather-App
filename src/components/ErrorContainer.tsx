@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { useWeather } from "../contexts/WeatherContext";
 
-const ErrorMessageContainer = () => {
+const ErrorMessageContainer = ({ errorMsg }: { errorMsg: string }) => {
   const { RPH, RPW } = useWeather();
   return (
     <View
@@ -24,8 +24,7 @@ const ErrorMessageContainer = () => {
           textAlign: "center"
         }}
       >
-        Couldn't find the city you are looking for! Please write the correct
-        name and try again.
+        {errorMsg}
       </Text>
     </View>
   );
